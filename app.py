@@ -7,8 +7,10 @@ from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table_experiments as dt
-
+import plotly.plotly as py
+import plotly.graph_objs as go
 import pandas as pd
+
 from textwrap import dedent
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -146,13 +148,12 @@ def parse_contents(contents, filename, date):
         return html.Div([
             'There was an error processing this file.'
         ])
-
+    trace = [go.Heatmap(z=df.values.tolist(), colorscale='Viridis')]
+    py.plot(trace, filename='pandas-heatmap')
     return html.Div([
         html.H5(filename),
         html.H6(datetime.datetime.fromtimestamp(date)),
 
-        # Use the DataTable prototype component:
-        # github.com/plotly/dash-table-experiments
         dt.DataTable(rows=df.to_dict('records')),
 
         html.Hr(),  # horizontal line
@@ -177,9 +178,15 @@ def update_output(n_clicks, value):
 @app.callback(
     dash.dependencies.Output('output-container-button2', 'children'),
     [dash.dependencies.Input('button2', 'n_clicks')],
-    [dash.dependencies.State('input-box2', 'value')])
-def update_output(value):
-    return
+    [dash.dependencies.State('input-box2', 'value'),
+     dash.dependencies.State('input-box3', 'value')])
+def update_output(n_clicks, value1, value2):
+    return 'The pathway for {} that contains {} is {}'.format(
+        value2,
+        value1,
+        bio.search_pathway(
+            value1,
+            value2))
 
 
 @app.callback(Output('output-data-upload', 'children'),
