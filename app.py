@@ -56,10 +56,31 @@ app.layout = html.Div([
                             }),
                 html.Div(id='output-container-button1',
                          children='Enter a value and press submit')
-            ])
+            ]),
+            dcc.Upload(
+                id='upload-data',
+                children=html.Div([
+                    'Drag and Drop or ',
+                    html.A('Select Files')
+                ]),
+                style={
+                    'width': '40%',
+                    'height': '45px',
+                    'lineHeight': '60px',
+                    'borderWidth': '1px',
+                    'borderStyle': 'dashed',
+                    'borderRadius': '5px',
+                    'textAlign': 'center',
+                    'margin': '10px'
+                },
+                # Allow multiple files to be uploaded
+                multiple=True
+            ),
+            html.Div(id='output-data-upload'),
+            html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
         ]),
-        dcc.Tab(label='Search for Pathways', children=[
-            html.H5('Search by:'),
+        dcc.Tab(label='Search by genes', children=[
+            html.H5('WORK IN PROGRESS'),
             dcc.RadioItems(
                 options=[
                     {'label': 'Name', 'value': 'name'},
@@ -94,38 +115,15 @@ app.layout = html.Div([
             html.Button('Submit',
                         id='button2',
                         style={
-                                'width': '160px',
-                                'height': '40px',
-                                'textAlign': 'center',
-                                'margin': '10px'
-                            }),
+                            'width': '160px',
+                            'height': '40px',
+                            'textAlign': 'center',
+                            'margin': '10px'
+                        }),
             html.Div(id='output-container-button2',
                      children='Enter a value and press submit')
         ]),
-        dcc.Tab(label='Upload File', children=[
-            dcc.Upload(
-                id='upload-data',
-                children=html.Div([
-                    'Drag and Drop or ',
-                    html.A('Select Files')
-                ]),
-                style={
-                    'width': '40%',
-                    'height': '45px',
-                    'lineHeight': '60px',
-                    'borderWidth': '1px',
-                    'borderStyle': 'dashed',
-                    'borderRadius': '5px',
-                    'textAlign': 'center',
-                    'margin': '10px'
-                },
-                # Allow multiple files to be uploaded
-                multiple=True
-            ),
-            html.Div(id='output-data-upload'),
-            html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
-        ]),
-    ])
+    ]),
 ])
 
 
@@ -199,6 +197,7 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
             parse_contents(c, n, d) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
+    return None
 
 
 if __name__ == '__main__':
