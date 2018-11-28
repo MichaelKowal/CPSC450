@@ -19,30 +19,35 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
-    dcc.Input(id='input-box', type='text', value=''),
-    html.Button(id='submit-button', n_clicks=0, children='Submit'),
-    html.Div(id='output-state'),
-    dcc.Upload(
-        id='upload-data',
-        children=html.Div([
-            'Drag and Drop or ',
-            html.A('Select Files')
+    dcc.Tabs(id='tabs', children=[
+        dcc.Tab(label='Search by Pathway', children=[
+            dcc.Input(id='input-box', type='text', value=''),
+            html.Button(id='submit-button', n_clicks=0, children='Submit'),
+            html.Div(id='output-state'),
+            dcc.Upload(
+                id='upload-data',
+                children=html.Div([
+                    'Drag and Drop or ',
+                    html.A('Select Files')
+                ]),
+                style={
+                    'width': '100%',
+                    'height': '60px',
+                    'lineHeight': '60px',
+                    'borderWidth': '1px',
+                    'borderStyle': 'dashed',
+                    'borderRadius': '5px',
+                    'textAlign': 'center',
+                    'margin': '10px'
+                },
+                # Allow multiple files to be uploaded
+                multiple=True
+            ),
+            html.Div(id='output-data-upload'),
+            html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
         ]),
-        style={
-            'width': '100%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px',
-            'textAlign': 'center',
-            'margin': '10px'
-        },
-        # Allow multiple files to be uploaded
-        multiple=True
-    ),
-    html.Div(id='output-data-upload'),
-    html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
+        dcc.Tab(label='Search by Genes')
+    ])
 ])
 
 
@@ -77,6 +82,8 @@ def parse_contents(contents, filename, dates, genes):
     selection['Delta'] = lst
     hot = selection[selection['Delta'] >= 0]
     cold = selection[selection['Delta'] < 0]
+    hot = hot.drop(['Delta'], axis=1)
+    cold = cold.drop(['Delta'], axis=1)
     trace = [go.Heatmap(z=df.values.tolist(), colorscale='Viridis')]
     py.plot(trace, filename='pandas-heatmap')
     return html.Div([
@@ -84,19 +91,16 @@ def parse_contents(contents, filename, dates, genes):
 
         # Use the DataTable prototype component:
         # github.com/plotly/datatable-experiments
-        html.H6('HOT'),
-        dt.DataTable(rows=hot.to_dict('records')),
-        html.H6('COLD'),
-        dt.DataTable(rows=cold.to_dict('records')),
-
-        html.Hr(),  # horizontal line
-
-        # For debugging, display the raw contents provided by the web browser
-        html.Div('Raw Content'),
-        html.Pre(contents[0:200] + '...', style={
-            'whiteSpace': 'pre-wrap',
-            'wordBreak': 'break-all'
-        })
+        dcc.Tabs(id="tables", children=[
+            dcc.Tab(label='Cold', children=[
+                html.Div([
+                    dt.DataTable(rows=hot.to_dict('records')),
+                ])
+            ]),
+            dcc.Tab(label='Hot', children=[
+                dt.DataTable(rows=cold.to_dict('records')),
+            ]),
+        ]),
     ])
 
 
