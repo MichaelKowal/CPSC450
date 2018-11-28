@@ -14,5 +14,7 @@ def search_pathway(gene, organism):
 def get_pathway(pathway):
     s = KEGG()
     data = s.get(pathway)
+    if type(data) == int:
+        return data
     dict_data = s.parse(data)
     return dict_data['GENE']
