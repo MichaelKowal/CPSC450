@@ -10,6 +10,7 @@ import dash_table_experiments as dt
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.plotly as py
+import plotly.figure_factory as ff
 from dash.dependencies import Input, Output, State
 
 import bio
@@ -19,6 +20,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
+    html.H1('Bioinformatics'),
     dcc.Tabs(id='tabs', children=[
         dcc.Tab(label='Search by Pathway', children=[
             dcc.Input(id='input-box', type='text', value=''),
@@ -75,31 +77,62 @@ def parse_contents(contents, filename, dates, genes):
         return html.Div([
             'There was an error processing this file.'
         ])
+
+    # get all columns that contain genes in the pathway
     selection = df[df['tracking_id'].isin(genes)]
+
+    # send all the values to the find_delta method to compute the change between cold and thermo-neutral values
     lst = []
     for row in selection.itertuples():
         lst.append(find_delta(row[3], row[4], row[5], row[6], row[7], row[8]))
     selection['Delta'] = lst
+
+    # sort the file in the same order as the pathway
+    sorter_index = dict(zip(genes, range(len(genes))))
+    selection['tracking_id_sort'] = selection['tracking_id'].map(sorter_index)
+    selection.sort_values(['tracking_id_sort'], ascending=True, inplace=True)
+    selection.drop('tracking_id_sort', 1, inplace=True)
+
+    # split the hot and cold lists into 2 for easier visibility
     hot = selection[selection['Delta'] >= 0]
     cold = selection[selection['Delta'] < 0]
-    hot = hot.drop(['Delta'], axis=1)
-    cold = cold.drop(['Delta'], axis=1)
-    trace = [go.Heatmap(z=df.values.tolist(), colorscale='Viridis')]
-    py.plot(trace, filename='pandas-heatmap')
+    trace = [go.Heatmap(z=selection['Delta'].values.tolist(), y=selection['tracking_id'].values.tolist(),
+                        colorscale='Viridis')]
+    # return the tables as html tables
     return html.Div([
         html.H5(filename),
 
         # Use the DataTable prototype component:
         # github.com/plotly/datatable-experiments
         dcc.Tabs(id="tables", children=[
+            dcc.Tab(label='Full Pathway', children=[
+                html.Div([
+                    dt.DataTable(rows=selection.to_dict('records'))
+                ])
+            ]),
             dcc.Tab(label='Cold', children=[
                 html.Div([
                     dt.DataTable(rows=hot.to_dict('records')),
                 ])
             ]),
-            dcc.Tab(label='Hot', children=[
+            dcc.Tab(label='Thermal Neutral', children=[
                 dt.DataTable(rows=cold.to_dict('records')),
             ]),
+            dcc.Tab(label='Heatmap', children=[
+                dcc.Graph(
+                    id='heatmap',
+                    figure={
+                        'data': [{
+                            'z': [selection['Delta']],
+                            'zmax': 5,
+                            'zmin': -5,
+                            'showscale': True,
+                            'text': [selection['tracking_id']],
+                            'type': 'heatmap'
+                        }]
+                    }
+                ),
+            ])
         ]),
     ])
 
