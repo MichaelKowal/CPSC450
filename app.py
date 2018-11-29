@@ -48,7 +48,34 @@ app.layout = html.Div([
             html.Div(id='output-data-upload'),
             html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
         ]),
-        dcc.Tab(label='Search by Genes')
+        dcc.Tab(label='Search by Genes', children=[
+            dcc.Textarea(
+                id='textarea',
+                placeholder='Enter list of genes, separated by commas',
+                style={'width': '100%'}
+            ),
+            dcc.Upload(
+                id='upload-data-g',
+                children=html.Div([
+                    'Drag and Drop or ',
+                    html.A('Select Files')
+                ]),
+                style={
+                    'width': '100%',
+                    'height': '60px',
+                    'lineHeight': '60px',
+                    'borderWidth': '1px',
+                    'borderStyle': 'dashed',
+                    'borderRadius': '5px',
+                    'textAlign': 'center',
+                    'margin': '10px'
+                },
+                # Allow multiple files to be uploaded
+                multiple=True
+            ),
+            html.Div(id='output-data-upload-g'),
+            html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
+        ])
     ])
 ])
 
@@ -153,6 +180,21 @@ def get_genes_from_bioservices(genes):
 def update_output(list_of_contents, list_of_names, list_of_dates, genes):
     if list_of_contents is not None:
         gene_list = ast.literal_eval(genes)
+        children = [
+            parse_contents(c, n, d, gene_list) for c, n, d in
+            zip(list_of_contents, list_of_names, list_of_dates)]
+        return children
+
+
+@app.callback(Output('output-data-upload-g', 'children'),
+              [Input('upload-data-g', 'contents')],
+              [State('upload-data-g', 'filename'),
+               State('upload-data-g', 'last_modified'),
+               State('textarea', 'value')
+               ])
+def update_output_g(list_of_contents, list_of_names, list_of_dates, genes):
+    if list_of_contents is not None:
+        gene_list = genes.split(',')
         children = [
             parse_contents(c, n, d, gene_list) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
