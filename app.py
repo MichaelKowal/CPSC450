@@ -9,8 +9,6 @@ import dash_table_experiments as dt
 
 import pandas as pd
 import plotly.graph_objs as go
-import plotly.plotly as py
-import plotly.figure_factory as ff
 from dash.dependencies import Input, Output, State
 
 import bio
@@ -19,10 +17,18 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
+"""This builds all the initial menus.  It is essentially html but Dash provides us with the ability to write html
+without needing another file.  For more information on this visit: https://dash.plot.ly/
+"""
 app.layout = html.Div([
     html.H1('Bioinformatics'),
     dcc.Tabs(id='tabs', children=[
+        # this is the tab that lets users search for genes by pathway
         dcc.Tab(label='Search by Pathway', children=[
+            dcc.Markdown('''
+Pathways must be entered in the form <organism-code><pathway-number>.  If you are unsure what 
+the organism code is, use [this tool](https://www.genome.jp/kegg-bin/find_org_www?mode=abbr&obj=mode.map) to find it.
+            '''),
             dcc.Input(id='input-box', type='text', value=''),
             html.Button(id='submit-button', n_clicks=0, children='Submit'),
             html.Div(id='output-state'),
@@ -48,6 +54,7 @@ app.layout = html.Div([
             html.Div(id='output-data-upload'),
             html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
         ]),
+        # this tab lets users pick specific genes that they would like to have visualized
         dcc.Tab(label='Search by Genes', children=[
             dcc.Textarea(
                 id='textarea',
@@ -80,10 +87,13 @@ app.layout = html.Div([
 ])
 
 
+# this method is simply for calculating the delta between samples
 def find_delta(h1, h2, h3, c1, c2, c3):
     return ((float(c1) + float(c2) + float(c3)) / 3) - ((float(h1) + float(h2) + float(h3)) / 3)
 
 
+# take the uploaded file, search it for the genes specified earlier, and output a heatmap and files split the file into
+# genes that produce negative values and genes that produce positive values
 def parse_contents(contents, filename, dates, genes):
     content_type, content_string = contents.split(',')
 
@@ -97,6 +107,7 @@ def parse_contents(contents, filename, dates, genes):
             # Assume that the user uploaded an excel file
             df = pd.read_excel(io.BytesIO(decoded))
         else:
+            # Assume the user uploaded a space separated value table
             df = pd.read_csv(
                 io.StringIO(decoded.decode('utf-8')), delim_whitespace=True)
     except Exception as e:
@@ -137,14 +148,17 @@ def parse_contents(contents, filename, dates, genes):
                     dt.DataTable(rows=selection.to_dict('records'))
                 ])
             ]),
-            dcc.Tab(label='Cold', children=[
+            # a table of all the positive delta values
+            dcc.Tab(label='Positive', children=[
                 html.Div([
                     dt.DataTable(rows=hot.to_dict('records')),
                 ])
             ]),
-            dcc.Tab(label='Thermal Neutral', children=[
+            # a table of all the negative delta values
+            dcc.Tab(label='Negative', children=[
                 dt.DataTable(rows=cold.to_dict('records')),
             ]),
+            # a heatmap of all the delta values
             dcc.Tab(label='Heatmap', children=[
                 dcc.Graph(
                     id='heatmap',
@@ -164,6 +178,7 @@ def parse_contents(contents, filename, dates, genes):
     ])
 
 
+# returns a list of genes from the requested pathway
 def get_genes_from_bioservices(genes):
     new_genes = []
     for gene in genes.values():
@@ -171,6 +186,7 @@ def get_genes_from_bioservices(genes):
     return new_genes
 
 
+# called when a file is uploaded in the pathway tab
 @app.callback(Output('output-data-upload', 'children'),
               [Input('upload-data', 'contents')],
               [State('upload-data', 'filename'),
@@ -180,12 +196,14 @@ def get_genes_from_bioservices(genes):
 def update_output(list_of_contents, list_of_names, list_of_dates, genes):
     if list_of_contents is not None:
         gene_list = ast.literal_eval(genes)
+        # build all the dash components to fill the output div
         children = [
             parse_contents(c, n, d, gene_list) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
 
 
+# called when a file is uploaded in the gene tab
 @app.callback(Output('output-data-upload-g', 'children'),
               [Input('upload-data-g', 'contents')],
               [State('upload-data-g', 'filename'),
@@ -201,6 +219,7 @@ def update_output_g(list_of_contents, list_of_names, list_of_dates, genes):
         return children
 
 
+# Called when the submit button is clicked in the pathways tab.  Returns a list of genes in the pathway
 @app.callback(Output('output-state', 'children'),
               [Input('submit-button', 'n_clicks')],
               [State('input-box', 'value')])

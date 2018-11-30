@@ -11,6 +11,8 @@ def search_pathway(gene, organism):
     return k.get_pathway_by_gene(gene, organism)
 
 
+# This is the only method currently called through dash.  It provided the user with a list of genes in a requested
+# pathway.  If no pathway is found, it returns an error
 def get_pathway(pathway):
     s = KEGG()
     data = s.get(pathway)
