@@ -1,3 +1,4 @@
 .idea/
 --pycache__/
 *.pyc
+venv/*
