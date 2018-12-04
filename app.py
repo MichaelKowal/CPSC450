@@ -56,6 +56,7 @@ the organism code is, use [this tool](https://www.genome.jp/kegg-bin/find_org_ww
         ]),
         # this tab lets users pick specific genes that they would like to have visualized
         dcc.Tab(label='Search by Genes', children=[
+            html.H6('Search for specific genes.  Enter list of genes then upload a file to view results.'),
             dcc.Textarea(
                 id='textarea',
                 placeholder='Enter list of genes, separated by commas',
@@ -82,6 +83,11 @@ the organism code is, use [this tool](https://www.genome.jp/kegg-bin/find_org_ww
             ),
             html.Div(id='output-data-upload-g'),
             html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
+        ]),
+        dcc.Tab(label='Gene Ontology', children=[
+            dcc.Input(id='input-box-go', type='text', value=''),
+            html.Button(id='submit-button-go', n_clicks=0, children='Submit'),
+            html.Div(id='output-state-go'),
         ])
     ])
 ])
@@ -92,11 +98,10 @@ def find_delta(h1, h2, h3, c1, c2, c3):
     return ((float(c1) + float(c2) + float(c3)) / 3) - ((float(h1) + float(h2) + float(h3)) / 3)
 
 
-# take the uploaded file, search it for the genes specified earlier, and output a heatmap and files split the file into
+# take the uploaded file, search it for the genes specified earlier, and output a heat map and files split the file into
 # genes that produce negative values and genes that produce positive values
-def parse_contents(contents, filename, dates, genes):
+def parse_contents(contents, filename, dates, genes, name):
     content_type, content_string = contents.split(',')
-
     decoded = base64.b64decode(content_string)
     try:
         if 'csv' in filename:
@@ -119,7 +124,7 @@ def parse_contents(contents, filename, dates, genes):
     # get all columns that contain genes in the pathway
     selection = df[df['tracking_id'].isin(genes)]
 
-    # send all the values to the find_delta method to compute the change between cold and thermo-neutral values
+    # send all the values to the find_delta method to compute the change between cold and thermal neutral values
     lst = []
     for row in selection.itertuples():
         lst.append(find_delta(row[3], row[4], row[5], row[6], row[7], row[8]))
@@ -170,7 +175,10 @@ def parse_contents(contents, filename, dates, genes):
                             'showscale': True,
                             'text': [selection['tracking_id']],
                             'type': 'heatmap'
-                        }]
+                        }],
+                        'layout': {
+                            'title': name
+                        }
                     }
                 ),
             ])
@@ -181,9 +189,10 @@ def parse_contents(contents, filename, dates, genes):
 # returns a list of genes from the requested pathway
 def get_genes_from_bioservices(genes):
     new_genes = []
-    for gene in genes.values():
+    for gene in genes[1].values():
         new_genes.append(gene.split(';')[0])
-    return new_genes
+    name = genes[0][0].split(' - ')[0]
+    return name, new_genes
 
 
 # called when a file is uploaded in the pathway tab
@@ -195,10 +204,11 @@ def get_genes_from_bioservices(genes):
                ])
 def update_output(list_of_contents, list_of_names, list_of_dates, genes):
     if list_of_contents is not None:
-        gene_list = ast.literal_eval(genes)
         # build all the dash components to fill the output div
+        name, genes = genes.split(' - ')
+        genes = ast.literal_eval(genes)
         children = [
-            parse_contents(c, n, d, gene_list) for c, n, d in
+            parse_contents(c, n, d, genes, name) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
 
@@ -214,7 +224,7 @@ def update_output_g(list_of_contents, list_of_names, list_of_dates, genes):
     if list_of_contents is not None:
         gene_list = genes.split(',')
         children = [
-            parse_contents(c, n, d, gene_list) for c, n, d in
+            parse_contents(c, n, d, gene_list, '') for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
 
@@ -223,13 +233,24 @@ def update_output_g(list_of_contents, list_of_names, list_of_dates, genes):
 @app.callback(Output('output-state', 'children'),
               [Input('submit-button', 'n_clicks')],
               [State('input-box', 'value')])
-def get_pathway(n_clicks, input):
+def get_pathway(n_clicks, value):
     if n_clicks is not None and n_clicks > 0:
-        genes = bio.get_pathway(input)
+        genes = bio.get_pathway(value)
         if type(genes) == int:
-            return '''{} not found in the bioservices database.  Please try another pathway.'''.format(input)
-        new_genes = get_genes_from_bioservices(genes)
-        return str(new_genes)
+            return '''{} not found in the bioservices database.  Please try another pathway.'''.format(value)
+        name, new_genes = get_genes_from_bioservices(genes)
+        return str(name) + ' - ' + str(new_genes)
+    return None
+
+
+# Called when the submit button is clicked in the gene ontology tab
+@app.callback(Output('output-state-go', 'children'),
+              [Input('submit-button-go', 'n_clicks')],
+              [State('input-box-go', 'value')])
+def get_gene_ontology(n_clicks, value):
+    if n_clicks is not None and n_clicks > 0:
+        data = bio.get_go(value)
+        return str(data)
     return None
 
 

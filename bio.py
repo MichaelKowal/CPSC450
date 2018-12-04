@@ -1,4 +1,4 @@
-from bioservices import KEGG
+from bioservices import KEGG, QuickGO
 
 
 def search_organism(organism):
@@ -19,4 +19,10 @@ def get_pathway(pathway):
     if type(data) == int:
         return data
     dict_data = s.parse(data)
-    return dict_data['GENE']
+    path_info = (dict_data['NAME'], dict_data['GENE'])
+    return path_info
+
+def get_go(goid):
+    s = QuickGO()
+    res = s.Terms('GO:' + goid)
+    return res
