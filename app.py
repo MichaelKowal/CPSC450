@@ -163,7 +163,7 @@ def parse_contents(contents, filename, dates, genes, name):
             dcc.Tab(label='Negative', children=[
                 dt.DataTable(rows=cold.to_dict('records')),
             ]),
-            # a heatmap of all the delta values
+            # a heat map of all the delta values
             dcc.Tab(label='Heatmap', children=[
                 dcc.Graph(
                     id='heatmap',
@@ -250,7 +250,11 @@ def get_pathway(n_clicks, value):
 def get_gene_ontology(n_clicks, value):
     if n_clicks is not None and n_clicks > 0:
         data = bio.get_go(value)
-        return str(data)
+        stuff = '['
+        for i in data[0]:
+            stuff += 'html.H5("' + str(i) + ' : ' + str(data[0][i]) + '"),\n'
+        print(stuff)
+        return eval(stuff + '],')
     return None
 
 
