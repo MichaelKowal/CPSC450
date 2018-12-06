@@ -19,6 +19,7 @@ def get_pathway(pathway):
     if type(data) == int:
         return data
     dict_data = s.parse(data)
+    print(dict_data)
     path_info = (dict_data['NAME'], dict_data['GENE'])
     return path_info
 

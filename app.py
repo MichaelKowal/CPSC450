@@ -16,6 +16,7 @@ import bio
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app.config['suppress_callback_exceptions']=True
 
 """This builds all the initial menus.  It is essentially html but Dash provides us with the ability to write html
 without needing another file.  For more information on this visit: https://dash.plot.ly/
@@ -98,6 +99,10 @@ def find_delta(h1, h2, h3, c1, c2, c3):
     return ((float(c1) + float(c2) + float(c3)) / 3) - ((float(h1) + float(h2) + float(h3)) / 3)
 
 
+def compare_one(h1, h2, h3, c1):
+    return float(c1) - ((float(h1) + float(h2) + float(h3)) / 3)
+
+
 # take the uploaded file, search it for the genes specified earlier, and output a heat map and files split the file into
 # genes that produce negative values and genes that produce positive values
 def parse_contents(contents, filename, dates, genes, name):
@@ -125,10 +130,28 @@ def parse_contents(contents, filename, dates, genes, name):
     selection = df[df['tracking_id'].isin(genes)]
 
     # send all the values to the find_delta method to compute the change between cold and thermal neutral values
-    lst = []
+    lst1 = []
+    lst2 = []
+    lst3 = []
+    lst4 = []
+    lst5 = []
+    lst6 = []
+    lst7 = []
     for row in selection.itertuples():
-        lst.append(find_delta(row[3], row[4], row[5], row[6], row[7], row[8]))
-    selection['Delta'] = lst
+        lst1.append(find_delta(row[3], row[4], row[5], row[6], row[7], row[8]))
+        lst2.append(compare_one(row[3], row[4], row[5], row[6]))
+        lst3.append(compare_one(row[3], row[4], row[5], row[7]))
+        lst4.append(compare_one(row[3], row[4], row[5], row[8]))
+        lst5.append(compare_one(row[6], row[7], row[8], row[3]))
+        lst6.append(compare_one(row[6], row[7], row[8], row[4]))
+        lst7.append(compare_one(row[6], row[7], row[8], row[5]))
+    selection['Delta'] = lst1
+    selection['c1Comp'] = lst2
+    selection['c2Comp'] = lst3
+    selection['c3Comp'] = lst4
+    selection['cn1Comp'] = lst5
+    selection['cn2Comp'] = lst6
+    selection['cn3Comp'] = lst7
 
     # sort the file in the same order as the pathway
     sorter_index = dict(zip(genes, range(len(genes))))
@@ -139,8 +162,11 @@ def parse_contents(contents, filename, dates, genes, name):
     # split the hot and cold lists into 2 for easier visibility
     hot = selection[selection['Delta'] >= 0]
     cold = selection[selection['Delta'] < 0]
+    hot = hot.drop(['c1Comp', 'c2Comp','c3Comp','cn1Comp','cn2Comp','cn3Comp'], axis=1)
+    cold = cold.drop(['c1Comp', 'c2Comp', 'c3Comp', 'cn1Comp', 'cn2Comp', 'cn3Comp'], axis=1)
     trace = [go.Heatmap(z=selection['Delta'].values.tolist(), y=selection['tracking_id'].values.tolist(),
                         colorscale='Viridis')]
+    view = selection.drop(['c1Comp', 'c2Comp','c3Comp','cn1Comp','cn2Comp','cn3Comp'], axis=1)
     # return the tables as html tables
     return html.Div([
         html.H5(filename),
@@ -150,7 +176,7 @@ def parse_contents(contents, filename, dates, genes, name):
         dcc.Tabs(id="tables", children=[
             dcc.Tab(label='Full Pathway', children=[
                 html.Div([
-                    dt.DataTable(rows=selection.to_dict('records'))
+                    dt.DataTable(rows=view.to_dict('records'))
                 ])
             ]),
             # a table of all the positive delta values
@@ -169,7 +195,15 @@ def parse_contents(contents, filename, dates, genes, name):
                     id='heatmap',
                     figure={
                         'data': [{
-                            'z': [selection['Delta']],
+                            'z': [
+                                selection['c1Comp'],
+                                selection['c2Comp'],
+                                selection['c3Comp'],
+                                selection['Delta'],
+                                selection['cn1Comp'],
+                                selection['cn2Comp'],
+                                selection['cn3Comp']
+                                  ],
                             'zmax': 5,
                             'zmin': -5,
                             'showscale': True,
