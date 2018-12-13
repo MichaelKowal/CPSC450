@@ -14,6 +14,24 @@ body {
     margin-bottom: 10px;
 }
 
+.doc{
+    width: 80%;
+}
+
+.doc-tool{
+    width:40%;
+}
+
+.doc-query{
+    width: 70%;
+}
+
+.doc-type{
+    font-size: 13px;
+    font-style: italic;
+    color:#2479F6;
+}
+
 .logo-text{
     display: block;
     margin-left: auto;
@@ -23,8 +41,29 @@ body {
     color: #2479F6;
 }
 
-.tabs {
-
-    background-color: black;
+#submit-button{
+    margin-top:10px;
+    margin-bottom:10px;
+    color:#ffffff;
+    background-color: #2479F6;
 }
+#submit-button:hover{
+    background-color: #ffffff;
+    border: 1px solid #2479F6;
+    color: #2479F6;
+}
+
+#output-state{
+    color: #6E94CC;
+}
+
+#output-data-upload{
+    text-transform: uppercase;
+    color: #6E94CC;
+
+}
+
+
+
+
 

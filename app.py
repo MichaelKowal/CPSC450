@@ -65,12 +65,14 @@ app.layout = html.Div([
     dcc.Tabs(id='tabs', children=[
         # this is the tab that lets users search for genes by pathway
         dcc.Tab(label='Search by Pathway', children=[
-            dcc.Markdown('''
-Pathways must be entered in the form <organism-code><pathway-number>.  If you are unsure what 
-the organism code is, use [this tool](https://www.genome.jp/kegg-bin/find_org_www?mode=abbr&obj=mode.map) to find it.
-            '''),
-            dcc.Input(id='input-box', type='text', value=''),
-            html.Button(id='submit-button', n_clicks=0, children='Submit'),
+            html.Br(),
+            html.H6('Enter a pathway and upload data for results. Data must be properly formatted - see the '
+                    'documentation tab for more details.'),
+            dcc.Input(id='input-box', type='text', value='', style={
+                'width':'50%'
+            }),
+            html.Br(),
+            html.Button(id='submit-button', n_clicks=0, children='Submit', className='submit-button'),
             html.Div(id='output-state'),
             dcc.Upload(
                 id='upload-data',
@@ -79,7 +81,10 @@ the organism code is, use [this tool](https://www.genome.jp/kegg-bin/find_org_ww
                     html.A('Select Files')
                 ]),
                 style={
-                    'width': '100%',
+                    # 'display':'block',
+                    # 'margin-right':'auto',
+                    # 'margin-left':'auto',
+                    'width': '50%',
                     'height': '60px',
                     'lineHeight': '60px',
                     'borderWidth': '1px',
@@ -96,11 +101,12 @@ the organism code is, use [this tool](https://www.genome.jp/kegg-bin/find_org_ww
         ]),
         # this tab lets users pick specific genes that they would like to have visualized
         dcc.Tab(label='Search by Genes', children=[
+            html.Br(),
             html.H6('Search for specific genes.  Enter list of genes then upload a file to view results.'),
             dcc.Textarea(
                 id='textarea',
                 placeholder='Enter list of genes, separated by commas',
-                style={'width': '100%'}
+                style={'width': '50%'}
             ),
             dcc.Upload(
                 id='upload-data-g',
@@ -109,7 +115,7 @@ the organism code is, use [this tool](https://www.genome.jp/kegg-bin/find_org_ww
                     html.A('Select Files')
                 ]),
                 style={
-                    'width': '100%',
+                    'width': '50%',
                     'height': '60px',
                     'lineHeight': '60px',
                     'borderWidth': '1px',
@@ -124,12 +130,76 @@ the organism code is, use [this tool](https://www.genome.jp/kegg-bin/find_org_ww
             html.Div(id='output-data-upload-g'),
             html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
         ], className='tabs'),
+
         # This tab displays User documentation
         dcc.Tab(label='Documentation', children=[
-            # dcc.Input(id='input-box-go', type='text', value=''),
-            # html.Button(id='submit-button-go', n_clicks=0, children='Submit'),
-            # html.Div(id='output-state-go'),
-            html.H1('Welcome to NEET')
+            html.Br(),
+            html.H1('Welcome to NEET'),
+            dcc.Markdown('''
+Welcome to NEET! You guessed it, it\'s a simple acronym for u**N**bc s**E**quencing r**E**search **T**ool. The purpose 
+of this tool is to allow RNA sequencing at UNBC to be simple, accessible, and free. The following steps will walk you 
+through exactly how to sequence your data andoutput meaningful results that will save you time and let you focus on 
+research, rather than speadsheets. NEET uses the KEGG database to query data. Consider visiting 
+[their](https://www.genome.jp/kegg/) website for more information.
+                         '''),
+            html.H1('Getting Started'),
+            html.H5('1.) Ensure your data is properly formatted.'),
+            dcc.Markdown('''
+NEET currently allows sequencing on up to 3 Control Groups and 3 Experimental Groups. It is important that your data is
+properly formatted in order for this tool to function properly. This tool will allow as many rows as needed, but the 
+data columns must be organized in the following way: Col 1= Tracking ID, Col 2 = locus, Col 3 - 5 = Control Group, Col
+6 - 8 = Experimental Group. Keep in mind that you can add as few as one control group and one experimental group, but 
+you must not exceed 3 control groups and 3 experimental groups. The addition of more groups is intended to be added in 
+future updates. The following is an example of properly formatted data.
+            '''),
+            html.Br(),
+            html.Div(html.Img(src=app.get_asset_url('input.png'), className='doc')),
+            html.H6('* Properly formatted data for NEET.', className='doc-type'),
+            html.H1('2.) Search By Pathway'),
+            dcc.Markdown('''
+Before you can search by specific pathways, you must first decide which pathway you wish to search. This information 
+must be input in th form **<organism code><pathway-number>**. An example of properly input pathways are: mmu04660, 
+mmu00250, mmu04623. If you are unsure of your organism code, use 
+[this tool](https://www.genome.jp/kegg-bin/find_org_www?mode=abbr&obj=mode.map) from the KEGG website. 
+            '''),
+            html.Div(html.Img(src=app.get_asset_url('search-tool.png'), className='doc-tool')),
+            html.H6('* KEGG organism search tool.', className='doc-type'),
+            dcc.Markdown('''
+Under the *Search By Pathway* tab, enter a pathway and click submit. The output from this pathway will then display 
+under the submit button. Once this display, either drag and drop an FPKM file into the window or select - *Select Files*.
+Your data will query and may take a moment depending on the amount of matches in the pathway. It will 
+display at the bottom of the page. 
+            '''),
+            html.Div(html.Img(src=app.get_asset_url('query.png'), className='doc-query')),
+            html.H6('* Output of the pathway will be printed in the app.', className='doc-type'),
+
+            dcc.Markdown('''
+Here you can navigate a selection of tabs that visualize heatmaps of your sequencing data. If you hover over the heatmap,
+the Plotly tools will reveal above the heatmap. If you select the camera icon, you will be able to download the heatmap
+to your computer. 
+            '''),
+            html.Div(html.Img(src=app.get_asset_url('heatmap.png'), className='doc-query')),
+            html.H6('* This is an example of the heatmap data.', className='doc-type'),
+            html.Div(html.Img(src=app.get_asset_url('download.png'), className='doc-query')),
+            html.H6('* The camera icon will allow you to download the heatmap to your computer.', className='doc-type'),
+            dcc.Markdown('''
+You can also select the raw data of the pathway. The data is available as either a full pathway, or positive and negative
+outputs. This data can easily be copied from the dashboard and pasted into an excel spreadsheet.
+            '''),
+            html.Div(html.Img(src=app.get_asset_url('raw-data.png'), className='doc-query')),
+            html.H1('3.) Searching by Genes'),
+            dcc.Markdown('''
+Searching by Genes works exactly the same as searching by Pathways. Make sure that each Gene Name is seperated by a 
+comma - otherwise multiple genes will not be queried. 
+            '''),
+            html.Br(),
+            html.Br(),
+            html.H1('Enjoy using NEET'),
+            dcc.Markdown('''
+If you have any question or concerns regarding NEET, or the UNBC Research Portal, all inquiries can be forwarded to 
+Alex Aravind's office. Thank you and enjoy.
+            ''')
+
         ])
     ])
 ],
@@ -259,6 +329,7 @@ def parse_contents(contents, filename, dates, genes, name):
                                     ],
                                     'zmax': 5,
                                     'zmin': -5,
+                                    'y': ['C Group 3', 'C Group 2', 'C Group 1'],
                                     'showscale': True,
                                     'text': [selection['tracking_id']],
                                     'type': 'heatmap',
@@ -290,6 +361,7 @@ def parse_contents(contents, filename, dates, genes, name):
                                     ],
                                     'zmax': 5,
                                     'zmin': -5,
+                                    'y': ['X Group 3', 'X Group 2', 'X Group 1'],
                                     'showscale': True,
                                     'text': [selection['tracking_id']],
                                     'type': 'heatmap',
