@@ -153,7 +153,7 @@ you must not exceed 3 control groups and 3 experimental groups. The addition of 
 future updates. The following is an example of properly formatted data.
             '''),
             html.Br(),
-            html.Div(html.Img(src=app.get_asset_url('input.png'), className='doc')),
+            html.Div(html.Img(src=app.get_asset_url('input.png'), className='doc-query')),
             html.H6('* Properly formatted data for NEET.', className='doc-type'),
             html.H1('2.) Search By Pathway'),
             dcc.Markdown('''
