@@ -52,10 +52,11 @@ app.config['suppress_callback_exceptions']=True
 
 
 #----------------------------------------------------------------------------#
-# Page 2 Layout
+# Main Layout
 #----------------------------------------------------------------------------#
+
 app.layout = html.Div([
-    html.Div(html.Img(src=app.get_asset_url('neet-logo-tiny.png'), className='logo')),
+    html.Div(html.Img(src=app.get_asset_url('neet-logo-blue-tiny.png'), className='logo')),
     html.H1('uNbc sEquencing rEsearch Tool', className='logo-text'),
 
     # represents the URL bar, doesn't render anything
@@ -85,7 +86,7 @@ the organism code is, use [this tool](https://www.genome.jp/kegg-bin/find_org_ww
                     'borderStyle': 'dashed',
                     'borderRadius': '5px',
                     'textAlign': 'center',
-                    'margin': '10px'
+                    'margin-top': '10px'
                 },
                 # Allow multiple files to be uploaded
                 multiple=True
@@ -115,23 +116,26 @@ the organism code is, use [this tool](https://www.genome.jp/kegg-bin/find_org_ww
                     'borderStyle': 'dashed',
                     'borderRadius': '5px',
                     'textAlign': 'center',
-                    'margin': '10px'
+
                 },
                 # Allow multiple files to be uploaded
                 multiple=True
             ),
             html.Div(id='output-data-upload-g'),
             html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
-        ]),
-        dcc.Tab(label='Gene Ontology', children=[
-            dcc.Input(id='input-box-go', type='text', value=''),
-            html.Button(id='submit-button-go', n_clicks=0, children='Submit'),
-            html.Div(id='output-state-go'),
+        ], className='tabs'),
+        # This tab displays User documentation
+        dcc.Tab(label='Documentation', children=[
+            # dcc.Input(id='input-box-go', type='text', value=''),
+            # html.Button(id='submit-button-go', n_clicks=0, children='Submit'),
+            # html.Div(id='output-state-go'),
+            html.H1('Welcome to NEET')
         ])
     ])
 ],
 style={
-    'background-color':'#030D26'
+    # style for primary layout
+    'margin-bottom':'100px'
 })
 
 
@@ -236,51 +240,93 @@ def parse_contents(contents, filename, dates, genes, name):
 
         # Use the DataTable prototype component:
         # github.com/plotly/datatable-experiments
-        dcc.Tabs(id="tables", children=[
-            dcc.Tab(label='Full Pathway', children=[
-                html.Div([
-                    dt.DataTable(rows=view.to_dict('records'))
+
+        #Tab for Control Group
+        dcc.Tabs(id="groups", children=[
+            dcc.Tab(label='Control Group', children=[
+                dcc.Tabs(id="tables", children=[
+
+                    # a heat map of all the delta values for the Control Group
+                    dcc.Tab(label='Heatmap', children=[
+                        dcc.Graph(
+                            id='heatmap',
+                            figure={
+                                'data': [{
+                                    'z': [
+                                        selection['cn1Comp'],
+                                        selection['cn2Comp'],
+                                        selection['cn3Comp']
+                                    ],
+                                    'zmax': 5,
+                                    'zmin': -5,
+                                    'showscale': True,
+                                    'text': [selection['tracking_id']],
+                                    'type': 'heatmap',
+                                    'colorscale': 'Blues'
+                                }],
+                                'layout': {
+                                    'title': name,
+                                }
+                            }
+                        ),
+                    ])
                 ])
             ]),
-            # a table of all the positive delta values
-            dcc.Tab(label='Positive', children=[
-                html.Div([
-                    dt.DataTable(rows=hot.to_dict('records')),
+
+            # Tab for Experimental Group
+            dcc.Tab(label='Experimental Group', children=[
+                dcc.Tabs(id="tables", children=[
+                    # a heat map of all the delta values for the Experimental Group
+                    dcc.Tab(label='Heatmap', children=[
+                        dcc.Graph(
+                            id='heatmap',
+                            figure={
+                                'data': [{
+                                    'z': [
+                                        selection['c1Comp'],
+                                        selection['c2Comp'],
+                                        selection['c3Comp'],
+
+                                    ],
+                                    'zmax': 5,
+                                    'zmin': -5,
+                                    'showscale': True,
+                                    'text': [selection['tracking_id']],
+                                    'type': 'heatmap',
+                                    'colorscale': 'Blues'
+                                }],
+                                'layout': {
+                                    'title': name,
+                                }
+                            }
+                        ),
+                    ])
                 ])
             ]),
-            # a table of all the negative delta values
-            dcc.Tab(label='Negative', children=[
-                dt.DataTable(rows=cold.to_dict('records')),
+
+            # Tab for Raw Data
+            dcc.Tab(label='Raw Data', children=[
+                dcc.Tabs(id="tables", children=[
+                    dcc.Tab(label='Full Pathway', children=[
+                        html.Div([
+                            dt.DataTable(rows=view.to_dict('records'))
+                        ])
+                    ]),
+                    # a table of all the positive delta values
+                    dcc.Tab(label='Positive', children=[
+                        html.Div([
+                            dt.DataTable(rows=hot.to_dict('records')),
+                        ])
+                    ]),
+                    # a table of all the negative delta values
+                    dcc.Tab(label='Negative', children=[
+                        dt.DataTable(rows=cold.to_dict('records')),
+                    ]),
+                ])
             ]),
-            # a heat map of all the delta values
-            dcc.Tab(label='Heatmap', children=[
-                dcc.Graph(
-                    id='heatmap',
-                    figure={
-                        'data': [{
-                            'z': [
-                                selection['c1Comp'],
-                                selection['c2Comp'],
-                                selection['c3Comp'],
-                                selection['Delta'],
-                                selection['cn1Comp'],
-                                selection['cn2Comp'],
-                                selection['cn3Comp']
-                                  ],
-                            'zmax': 5,
-                            'zmin': -5,
-                            'showscale': True,
-                            'text': [selection['tracking_id']],
-                            'type': 'heatmap',
-                            'colorscale':'Greens'
-                        }],
-                        'layout': {
-                            'title': name,
-                        }
-                    }
-                ),
-            ])
+
         ]),
+
     ])
 
 

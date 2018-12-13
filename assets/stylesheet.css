@@ -2,7 +2,7 @@ body {
     margin-left: 10%;
     margin-right: 10%;
     margin-top: 2%;
-    background-color: #030D26;
+    background-color: #ffffff;
 
 
 }
@@ -20,6 +20,11 @@ body {
     margin-right: auto;
     text-align: center;
     font-size: 20px;
-    color: #59d256;
+    color: #2479F6;
+}
+
+.tabs {
+
+    background-color: black;
 }
 
