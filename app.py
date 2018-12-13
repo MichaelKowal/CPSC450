@@ -7,22 +7,60 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_table_experiments as dt
 
+
 import pandas as pd
 import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
 
 import bio
 
+
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
 app.config['suppress_callback_exceptions']=True
 
-"""This builds all the initial menus.  It is essentially html but Dash provides us with the ability to write html
-without needing another file.  For more information on this visit: https://dash.plot.ly/
-"""
+
+# Incorporating multiple page support (If this is scaled it will all change.)
+
+# app.layout = html.Div([
+#     dcc.Location(id='url', refresh='False'),
+#     html.Div(id='page-content')
+# ])
+
+
+# error_404 = html.Div([
+#     html.H1("If you are seeing this, than things have gone horribly wrong."),
+#     html.Br(),
+#     dcc.Link('Go to the Portal', href='/main'),
+#     html.Br(),
+#     dcc.Link('Go to Neet', href='/neet')
+# ])
+#
+#
+# page_main_layout = html.Div([
+#     html.H1("Welcome to the main page"),
+#     dcc.Tabs(id='tabs', children=[
+#         dcc.Tab(label='Hello World', children=[
+#             dcc.Markdown('''
+#             Hello there...''')
+#         ])
+#     ])
+# ])
+
+
+
+#----------------------------------------------------------------------------#
+# Page 2 Layout
+#----------------------------------------------------------------------------#
 app.layout = html.Div([
-    html.H1('Bioinformatics'),
+    html.Div(html.Img(src=app.get_asset_url('neet-logo-tiny.png'), className='logo')),
+    html.H1('uNbc sEquencing rEsearch Tool', className='logo-text'),
+
+    # represents the URL bar, doesn't render anything
+    dcc.Location(id='url', refresh=False),
+
     dcc.Tabs(id='tabs', children=[
         # this is the tab that lets users search for genes by pathway
         dcc.Tab(label='Search by Pathway', children=[
@@ -91,8 +129,33 @@ the organism code is, use [this tool](https://www.genome.jp/kegg-bin/find_org_ww
             html.Div(id='output-state-go'),
         ])
     ])
-])
+],
+style={
+    'background-color':'#030D26'
+})
 
+
+
+
+# Updates the page index.
+#
+# @app.callback(dash.dependencies.Output('page-content', 'children'),
+#               [dash.dependencies.Input('url', 'pathname')])
+# def display_page(pathname):
+#     if pathname =='/main' :
+#         return page_main_layout
+#     elif pathname =='/neet' :
+#         return app.layout
+#     else:
+#         return error_404
+
+
+
+
+
+#----------------------------------------------------------------------------#
+# Functions
+#----------------------------------------------------------------------------#
 
 # this method is simply for calculating the delta between samples
 def find_delta(h1, h2, h3, c1, c2, c3):
@@ -208,10 +271,11 @@ def parse_contents(contents, filename, dates, genes, name):
                             'zmin': -5,
                             'showscale': True,
                             'text': [selection['tracking_id']],
-                            'type': 'heatmap'
+                            'type': 'heatmap',
+                            'colorscale':'Greens'
                         }],
                         'layout': {
-                            'title': name
+                            'title': name,
                         }
                     }
                 ),
@@ -292,5 +356,13 @@ def get_gene_ontology(n_clicks, value):
     return None
 
 
+
+
+
 if __name__ == '__main__':
     app.run_server(debug=True)
+
+
+
+
+
