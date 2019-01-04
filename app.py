@@ -9,7 +9,6 @@ import dash_table_experiments as dt
 
 
 import pandas as pd
-import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
 
 import bio
@@ -22,38 +21,9 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.config['suppress_callback_exceptions']=True
 
 
-# Incorporating multiple page support (If this is scaled it will all change.)
-
-# app.layout = html.Div([
-#     dcc.Location(id='url', refresh='False'),
-#     html.Div(id='page-content')
-# ])
-
-
-# error_404 = html.Div([
-#     html.H1("If you are seeing this, than things have gone horribly wrong."),
-#     html.Br(),
-#     dcc.Link('Go to the Portal', href='/main'),
-#     html.Br(),
-#     dcc.Link('Go to Neet', href='/neet')
-# ])
-#
-#
-# page_main_layout = html.Div([
-#     html.H1("Welcome to the main page"),
-#     dcc.Tabs(id='tabs', children=[
-#         dcc.Tab(label='Hello World', children=[
-#             dcc.Markdown('''
-#             Hello there...''')
-#         ])
-#     ])
-# ])
-
-
-
-#----------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------#
 # Main Layout
-#----------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------#
 
 app.layout = html.Div([
     html.Div(html.Img(src=app.get_asset_url('neet-logo-blue-tiny.png'), className='logo')),
@@ -134,17 +104,18 @@ app.layout = html.Div([
         # This tab displays User documentation
         dcc.Tab(label='Documentation', children=[
             html.Br(),
-            html.H1('Welcome to NEET'),
             dcc.Markdown('''
+# Welcome to NEET
 Welcome to NEET! You guessed it, it\'s a simple acronym for u**N**bc s**E**quencing r**E**search **T**ool. The purpose 
 of this tool is to allow RNA sequencing at UNBC to be simple, accessible, and free. The following steps will walk you 
 through exactly how to sequence your data andoutput meaningful results that will save you time and let you focus on 
 research, rather than speadsheets. NEET uses the KEGG database to query data. Consider visiting 
 [their](https://www.genome.jp/kegg/) website for more information.
-                         '''),
-            html.H1('Getting Started'),
-            html.H5('1.) Ensure your data is properly formatted.'),
-            dcc.Markdown('''
+
+# Getting Started
+
+# 1.) Ensure your data is properly formatted.
+
 NEET currently allows sequencing on up to 3 Control Groups and 3 Experimental Groups. It is important that your data is
 properly formatted in order for this tool to function properly. This tool will allow as many rows as needed, but the 
 data columns must be organized in the following way: Col 1= Tracking ID, Col 2 = locus, Col 3 - 5 = Control Group, Col
@@ -155,8 +126,9 @@ future updates. The following is an example of properly formatted data.
             html.Br(),
             html.Div(html.Img(src=app.get_asset_url('input.png'), className='doc-query')),
             html.H6('* Properly formatted data for NEET.', className='doc-type'),
-            html.H1('2.) Search By Pathway'),
             dcc.Markdown('''
+# 2.) Search By Pathway
+
 Before you can search by specific pathways, you must first decide which pathway you wish to search. This information 
 must be input in th form **<organism code><pathway-number>**. An example of properly input pathways are: mmu04660, 
 mmu00250, mmu04623. If you are unsure of your organism code, use 
@@ -203,39 +175,21 @@ Alex Aravind's office. Thank you and enjoy.
         ])
     ])
 ],
-style={
-    # style for primary layout
-    'margin-bottom':'100px'
+    style={
+        # style for primary layout
+        'margin-bottom':'100px'
 })
 
 
-
-
-# Updates the page index.
-#
-# @app.callback(dash.dependencies.Output('page-content', 'children'),
-#               [dash.dependencies.Input('url', 'pathname')])
-# def display_page(pathname):
-#     if pathname =='/main' :
-#         return page_main_layout
-#     elif pathname =='/neet' :
-#         return app.layout
-#     else:
-#         return error_404
-
-
-
-
-
-#----------------------------------------------------------------------------#
+# ---------------------------------------------------------------------------- #
 # Functions
-#----------------------------------------------------------------------------#
+# ---------------------------------------------------------------------------- #
 
 # this method is simply for calculating the delta between samples
 def find_delta(h1, h2, h3, c1, c2, c3):
     return ((float(c1) + float(c2) + float(c3)) / 3) - ((float(h1) + float(h2) + float(h3)) / 3)
 
-
+# compare one value of one type with the average of all the values of the other type
 def compare_one(h1, h2, h3, c1):
     return float(c1) - ((float(h1) + float(h2) + float(h3)) / 3)
 
@@ -274,6 +228,9 @@ def parse_contents(contents, filename, dates, genes, name):
     lst5 = []
     lst6 = []
     lst7 = []
+
+    # build each list, one for each data column.  This is a very messy, brute force approach.  Search for more elegant
+    # solution later.
     for row in selection.itertuples():
         lst1.append(find_delta(row[3], row[4], row[5], row[6], row[7], row[8]))
         lst2.append(compare_one(row[3], row[4], row[5], row[6]))
@@ -299,11 +256,12 @@ def parse_contents(contents, filename, dates, genes, name):
     # split the hot and cold lists into 2 for easier visibility
     hot = selection[selection['Delta'] >= 0]
     cold = selection[selection['Delta'] < 0]
+
+    # clean up all the extra columns
     hot = hot.drop(['c1Comp', 'c2Comp','c3Comp','cn1Comp','cn2Comp','cn3Comp'], axis=1)
     cold = cold.drop(['c1Comp', 'c2Comp', 'c3Comp', 'cn1Comp', 'cn2Comp', 'cn3Comp'], axis=1)
-    trace = [go.Heatmap(z=selection['Delta'].values.tolist(), y=selection['tracking_id'].values.tolist(),
-                        colorscale='Viridis')]
     view = selection.drop(['c1Comp', 'c2Comp','c3Comp','cn1Comp','cn2Comp','cn3Comp'], axis=1)
+
     # return the tables as html tables
     return html.Div([
         html.H5(filename),
@@ -322,18 +280,30 @@ def parse_contents(contents, filename, dates, genes, name):
                             id='heatmap',
                             figure={
                                 'data': [{
+                                    # each list in this array becomes a row in the heatmap
                                     'z': [
                                         selection['cn1Comp'],
                                         selection['cn2Comp'],
-                                        selection['cn3Comp']
+                                        selection['cn3Comp'],
+                                        selection['Delta']
                                     ],
+
+                                    # This is where you can change the resolution of the first heatmap
                                     'zmax': 5,
                                     'zmin': -5,
-                                    'y': ['C Group 3', 'C Group 2', 'C Group 1'],
+
+                                    # the y axis labels
+                                    'y': ['C Group 3', 'C Group 2', 'C Group 1', 'Delta'],
                                     'showscale': True,
-                                    'text': [selection['tracking_id']],
+
+                                    # the names of each element when you hover over specific points
+                                    'text': [
+                                        selection['tracking_id'],
+                                        selection['tracking_id'],
+                                        selection['tracking_id'],
+                                        selection['tracking_id']
+                                    ],
                                     'type': 'heatmap',
-                                    'colorscale': 'Blues'
                                 }],
                                 'layout': {
                                     'title': name,
@@ -353,19 +323,29 @@ def parse_contents(contents, filename, dates, genes, name):
                             id='heatmap',
                             figure={
                                 'data': [{
+                                    # each list in this array becomes a row in the heatmap
                                     'z': [
                                         selection['c1Comp'],
                                         selection['c2Comp'],
                                         selection['c3Comp'],
-
+                                        selection['Delta']
                                     ],
+                                    # This is where you can change the resolution of the second heatmap.
                                     'zmax': 5,
                                     'zmin': -5,
-                                    'y': ['X Group 3', 'X Group 2', 'X Group 1'],
+
+                                    # the y axis labels
+                                    'y': ['X Group 3', 'X Group 2', 'X Group 1', 'Delta'],
                                     'showscale': True,
-                                    'text': [selection['tracking_id']],
+
+                                    # the names of each element when you hover over specific points
+                                    'text': [
+                                        selection['tracking_id'],
+                                        selection['tracking_id'],
+                                        selection['tracking_id'],
+                                        selection['tracking_id']
+                                    ],
                                     'type': 'heatmap',
-                                    'colorscale': 'Blues'
                                 }],
                                 'layout': {
                                     'title': name,
@@ -379,6 +359,7 @@ def parse_contents(contents, filename, dates, genes, name):
             # Tab for Raw Data
             dcc.Tab(label='Raw Data', children=[
                 dcc.Tabs(id="tables", children=[
+                    # The first table contains all the genes in the pathway
                     dcc.Tab(label='Full Pathway', children=[
                         html.Div([
                             dt.DataTable(rows=view.to_dict('records'))
@@ -402,7 +383,8 @@ def parse_contents(contents, filename, dates, genes, name):
     ])
 
 
-# returns a list of genes from the requested pathway
+# returns a list of genes from the requested pathway by splitting the string apart.  pulls the name of the pathway off
+# the first element in the string.
 def get_genes_from_bioservices(genes):
     new_genes = []
     for gene in genes[1].values():
@@ -411,7 +393,7 @@ def get_genes_from_bioservices(genes):
     return name, new_genes
 
 
-# called when a file is uploaded in the pathway tab
+# called when a file is uploaded in the pathway tab.  Displays the graphs and the condensed lists.
 @app.callback(Output('output-data-upload', 'children'),
               [Input('upload-data', 'contents')],
               [State('upload-data', 'filename'),
@@ -420,16 +402,17 @@ def get_genes_from_bioservices(genes):
                ])
 def update_output(list_of_contents, list_of_names, list_of_dates, genes):
     if list_of_contents is not None:
-        # build all the dash components to fill the output div
+        # properly build a list of genes from the output of the search.
         name, genes = genes.split(' - ')
         genes = ast.literal_eval(genes)
+        # output all of the input.
         children = [
             parse_contents(c, n, d, genes, name) for c, n, d in
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
 
 
-# called when a file is uploaded in the gene tab
+# called when a file is uploaded in the gene tab.  Builds a list of genes based on what the input was.
 @app.callback(Output('output-data-upload-g', 'children'),
               [Input('upload-data-g', 'contents')],
               [State('upload-data-g', 'filename'),
@@ -438,6 +421,7 @@ def update_output(list_of_contents, list_of_names, list_of_dates, genes):
                ])
 def update_output_g(list_of_contents, list_of_names, list_of_dates, genes):
     if list_of_contents is not None:
+        genes = genes.replace('\'', '')
         gene_list = genes.split(',')
         children = [
             parse_contents(c, n, d, gene_list, '') for c, n, d in
@@ -451,15 +435,20 @@ def update_output_g(list_of_contents, list_of_names, list_of_dates, genes):
               [State('input-box', 'value')])
 def get_pathway(n_clicks, value):
     if n_clicks is not None and n_clicks > 0:
+        # this is where the bioservices method is called that grabs the requested pathway information.
         genes = bio.get_pathway(value)
+        # if the query was formatted wrong, tell the user and give them the error code.
         if type(genes) == int:
-            return '''{} not found in the bioservices database.  Please try another pathway.'''.format(value)
+            return '''{} not found in the bioservices database.  Please try another pathway. (KEGG Error: {})'''.\
+                format(value, genes)
+        # else format the list and get the name separated
         name, new_genes = get_genes_from_bioservices(genes)
         return str(name) + ' - ' + str(new_genes)
     return None
 
 
 # Called when the submit button is clicked in the gene ontology tab
+# Not currently being used.
 @app.callback(Output('output-state-go', 'children'),
               [Input('submit-button-go', 'n_clicks')],
               [State('input-box-go', 'value')])
@@ -474,13 +463,5 @@ def get_gene_ontology(n_clicks, value):
     return None
 
 
-
-
-
 if __name__ == '__main__':
     app.run_server(debug=True)
-
-
-
-
-
